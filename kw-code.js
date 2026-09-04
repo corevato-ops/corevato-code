@@ -2,50 +2,59 @@ document.addEventListener("DOMContentLoaded", function () {
     const carousel = document.getElementById("carousel");
     const pagination = document.getElementById("dotPagination");
 
-    if (!carousel || !pagination) return;
+    if (!carousel) return;
 
     const items = carousel.querySelectorAll(".carousel-item");
+    if (!items.length) return;
 
-    items.forEach((item, index) => {
-        const dot = document.createElement("span");
-        dot.className = "dot";
+    // Create dots
+    if (pagination) {
+        items.forEach((item, index) => {
+            const dot = document.createElement("span");
+            dot.className = "dot";
 
-        if (index === 0) {
-            dot.classList.add("active");
+            if (index === 0) {
+                dot.classList.add("active");
+            }
+
+            dot.addEventListener("click", function () {
+                carousel.scrollTo({
+                    left: item.offsetLeft,
+                    behavior: "smooth"
+                });
+            });
+
+            pagination.appendChild(dot);
+        });
+    }
+
+    // Auto Play
+    let currentIndex = 0;
+
+    setInterval(function () {
+        currentIndex++;
+
+        // Start again from first slide
+        if (currentIndex >= items.length) {
+            currentIndex = 0;
         }
 
-        dot.addEventListener("click", function () {
-            carousel.scrollTo({
-                left: item.offsetLeft,
-                behavior: "smooth"
+        carousel.scrollTo({
+            left: items[currentIndex].offsetLeft,
+            behavior: "smooth"
+        });
+
+        // Update active dot
+        if (pagination) {
+            const dots = pagination.querySelectorAll(".dot");
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle(
+                    "active",
+                    index === currentIndex
+                );
             });
-        });
+        }
 
-        pagination.appendChild(dot);
-    });
-
-    const dots = pagination.querySelectorAll(".dot");
-
-    carousel.addEventListener("scroll", function () {
-        let closestIndex = 0;
-        let closestDistance = Infinity;
-
-        items.forEach((item, index) => {
-            const distance = Math.abs(
-                carousel.scrollLeft - item.offsetLeft
-            );
-
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestIndex = index;
-            }
-        });
-
-        dots.forEach((dot, index) => {
-            dot.classList.toggle(
-                "active",
-                index === closestIndex
-            );
-        });
-    });
+    }, 3000); // 3 seconds
 });
