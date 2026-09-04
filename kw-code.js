@@ -1,77 +1,51 @@
-<script>
-	const carousel = document.getElementById("carousel");
-	const totalSlides = carousel.children.length;
-	let autoScroll;
-	const dotPagination = document.getElementById("dotPagination");
+document.addEventListener("DOMContentLoaded", function () {
+    const carousel = document.getElementById("carousel");
+    const pagination = document.getElementById("dotPagination");
 
-	function getSlideWidth() {
-		const firstItem = carousel.children[0];
-		if (!firstItem) return 0;
-		const gap = parseFloat(window.getComputedStyle(carousel).gap) || 10;
-		return firstItem.offsetWidth + gap;
-	}
+    if (!carousel || !pagination) return;
 
-	// Create pagination dots
-	for (let i = 0; i < totalSlides; i++) {
-		const dot = document.createElement("div");
-		dot.classList.add("dot");
-		if (i === 0) dot.classList.add("active");
-		dot.addEventListener("click", () => goToSlide(i));
-		dotPagination.appendChild(dot);
-	}
+    const items = carousel.querySelectorAll(".carousel-item");
 
-	function updateDots(index) {
-		const dots = document.querySelectorAll(".dot-pagination .dot");
-		dots.forEach((dot, i) => {
-			dot.classList.toggle("active", i === index);
-		});
-	}
+    items.forEach((item, index) => {
+        const dot = document.createElement("span");
+        dot.className = "dot";
 
-	function goToSlide(index) {
-		const slideWidth = getSlideWidth();
-		carousel.scrollTo({ left: index * slideWidth, behavior: "smooth" });
-		updateDots(index);
-	}
+        if (index === 0) {
+            dot.classList.add("active");
+        }
 
-	function nextSlide() {
-		const slideWidth = getSlideWidth();
-		if (!slideWidth) return;
-		const currentScroll = carousel.scrollLeft;
-		const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+        dot.addEventListener("click", function () {
+            carousel.scrollTo({
+                left: item.offsetLeft,
+                behavior: "smooth"
+            });
+        });
 
-		let nextIndex = Math.round(currentScroll / slideWidth) + 1;
-		
-		// Loop back to start if reached end or last index
-		if (nextIndex >= totalSlides || currentScroll >= maxScroll - 5) {
-			nextIndex = 0;
-		}
-		
-		goToSlide(nextIndex);
-	}
+        pagination.appendChild(dot);
+    });
 
-	function autoPlay() {
-		stopAutoPlay();
-		autoScroll = setInterval(nextSlide, 3000);
-	}
+    const dots = pagination.querySelectorAll(".dot");
 
-	function stopAutoPlay() {
-		if (autoScroll) clearInterval(autoScroll);
-	}
+    carousel.addEventListener("scroll", function () {
+        let closestIndex = 0;
+        let closestDistance = Infinity;
 
-	carousel.addEventListener("mouseenter", stopAutoPlay);
-	carousel.addEventListener("mouseleave", autoPlay);
+        items.forEach((item, index) => {
+            const distance = Math.abs(
+                carousel.scrollLeft - item.offsetLeft
+            );
 
-	// Touch events for mobile interaction
-	carousel.addEventListener("touchstart", stopAutoPlay, { passive: true });
-	carousel.addEventListener("touchend", autoPlay, { passive: true });
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = index;
+            }
+        });
 
-	carousel.addEventListener("scroll", () => {
-		const slideWidth = getSlideWidth();
-		if (slideWidth > 0) {
-			const index = Math.round(carousel.scrollLeft / slideWidth);
-			updateDots(index);
-		}
-	});
-
-	autoPlay();
-</script>
+        dots.forEach((dot, index) => {
+            dot.classList.toggle(
+                "active",
+                index === closestIndex
+            );
+        });
+    });
+});
