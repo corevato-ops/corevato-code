@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-</head>
-<body>
 <script>
 	const carousel = document.getElementById("carousel");
 	const totalSlides = carousel.children.length;
@@ -81,5 +75,3 @@
 
 	autoPlay();
 </script>
-</body>
-</html>
