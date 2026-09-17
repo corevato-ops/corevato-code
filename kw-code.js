@@ -1,23 +1,35 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Check if current page is the root homepage
-  if (window.location.pathname === "/" || window.location.pathname === "") {
-    fetch("https://heartstrong.kw.com/homepage-support")
-      .then((response) => response.text())
-      .then((html) => {
+(function() {
+  // Only target the root homepage
+  if (window.location.pathname !== '/' && window.location.pathname !== '') return;
+
+  function loadFounderSection() {
+    // Prevent duplicate injections
+    if (document.querySelector('.light-section')) return;
+
+    const searchBlock = document.querySelector('kw-search-block');
+    if (!searchBlock) return;
+
+    fetch('https://heartstrong.kw.com/homepage-support')
+      .then(res => res.text())
+      .then(html => {
         const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
+        const doc = parser.parseFromString(html, 'text/html');
+        const founderSection = doc.querySelector('.light-section');
 
-        // Target the founder section from your subpage
-        const founderSection = doc.querySelector(".light-section");
-        
-        // Target the class name .kw-search-block from your homepage
-        const searchBlock = document.querySelector(".kw-search-block");
-
-        // Inject the section directly after .kw-search-block
-        if (founderSection && searchBlock) {
+        if (founderSection && searchBlock.parentNode) {
           searchBlock.parentNode.insertBefore(founderSection, searchBlock.nextSibling);
         }
       })
-      .catch((err) => console.error("Error fetching section from support page:", err));
+      .catch(err => console.error('Error fetching section:', err));
   }
-});
+
+  // Poll until <kw-search-block> is present in the DOM
+  const interval = setInterval(() => {
+    if (document.querySelector('kw-search-block')) {
+      clearInterval(interval);
+      loadFounderSection();
+    }
+  }, 200);
+
+  setTimeout(() => clearInterval(interval), 10000);
+})();
