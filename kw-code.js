@@ -1,55 +1,75 @@
 (function () {
-    // Sirf Homepage par execute karein
-    var isHomePage = window.location.pathname === '/' || window.location.pathname === '';
-    if (!isHomePage) return;
+    // Current URL check karne ke liye
+    var currentPath = window.location.pathname.toLowerCase();
 
-    function injectSectionFromAbout() {
+    function injectDynamicSection() {
+        // Prevent duplicate insertion
         if (document.querySelector('.founder-container')) return;
 
-        // Hidden iframe ke zariye About page load karein (bypass fetch/CORS blocks)
-        var iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = '/homepage-support';
+        // Parent container find karein
+        var parentContainer = document.querySelector('.Page-oneColumn');
 
-        iframe.onload = function () {
-            try {
-                var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                var sourceNode = iframeDoc.querySelector('#founder-source-wrapper');
+        if (parentContainer && parentContainer.children.length > 0) {
+            // Child elements ki list
+            var children = parentContainer.children;
+            var targetElement = null;
 
-                if (sourceNode) {
-                    var clonedContent = document.importNode(sourceNode, true);
-                    
-                    // Placement Target Find karein
-                    var targetElement = document.querySelector('kw-search-block') || document.querySelector('.kw-search-block');
-
-                    if (targetElement && targetElement.parentNode) {
-                        targetElement.parentNode.insertBefore(clonedContent, targetElement.nextSibling);
-                    }
-                }
-            } catch (e) {
-                console.error("Iframe extraction failed: ", e);
-            } finally {
-                // Clean up iframe
-                document.body.removeChild(iframe);
+            // Page Link / Path ke mutabiq logic define karein
+            if (currentPath === '/' || currentPath === '') {
+                // HOMEPAGE: Agar pehla child (<kw-search-block>) hai, toh 1st child ke baad dikhayein
+                targetElement = children[0]; 
+            } else if (currentPath.includes('homepage-support')) {
+                // ABOUT PAGE: Agar doosre element ke baad dikhana ho
+                targetElement = children[1] || children[0];
+            } else {
+                // Default fallback
+                targetElement = children[0];
             }
-        };
 
-        document.body.appendChild(iframe);
+            if (targetElement) {
+                // About page se content iframe ke zariye extract karein
+                var iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = '/homepage-support';
+
+                iframe.onload = function () {
+                    try {
+                        var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        var sourceNode = iframeDoc.querySelector('#founder-source-wrapper') || iframeDoc.querySelector('.light-section');
+
+                        if (sourceNode) {
+                            var clonedContent = document.importNode(sourceNode, true);
+                            
+                            // Determined target element ke baad insert karein
+                            targetElement.parentNode.insertBefore(clonedContent, targetElement.nextSibling);
+                        }
+                    } catch (e) {
+                        console.error('Extraction error:', e);
+                    } final {
+                        if (iframe.parentNode) {
+                            document.body.removeChild(iframe);
+                        }
+                    }
+                };
+
+                document.body.appendChild(iframe);
+            }
+        }
     }
 
-    // Dynamic Element Watcher
-    function waitForElement() {
-        var target = document.querySelector('kw-search-block') || document.querySelector('.kw-search-block');
-        if (target && !document.querySelector('.founder-container')) {
-            injectSectionFromAbout();
+    // Interval to wait until .Page-oneColumn and its children load
+    function checkAndRun() {
+        var container = document.querySelector('.Page-oneColumn');
+        if (container && container.children.length > 0) {
+            injectDynamicSection();
         } else {
-            setTimeout(waitForElement, 300);
+            setTimeout(checkAndRun, 200);
         }
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        waitForElement();
+        checkAndRun();
     } else {
-        document.addEventListener('DOMContentLoaded', waitForElement);
+        document.addEventListener('DOMContentLoaded', checkAndRun);
     }
 })();
