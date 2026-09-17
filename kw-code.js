@@ -1,35 +1,28 @@
 (function () {
-    // To check the current URL
-    var currentPath = window.location.pathname.toLowerCase();
+    // Exact Full URLs
+    var homePageUrl = 'https://heartstrong.kw.com/';
+    var aboutPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
-    function injectDynamicSection() {
-        // Prevent duplicate insertion
+    // Normalize URL for comparison
+    var currentUrl = window.location.href.split('?')[0].split('#')[0];
+    if (!currentUrl.endsWith('/')) {
+        currentUrl += '/';
+    }
+
+    function injectSection() {
         if (document.querySelector('.founder-container')) return;
 
-        // Parent container finding
         var parentContainer = document.querySelector('.Page-oneColumn');
 
         if (parentContainer && parentContainer.children.length > 0) {
-            // Child elements list
-            var children = parentContainer.children;
-            var targetElement = null;
-
-            // Define the logic according to the page link/path
-            if (currentPath === '/' || currentPath === '') {
-                targetElement = children[0]; 
-            } else if (currentPath.includes('homepage-support')) {
-                // ABOUT PAGE: If it needs to be displayed after the second element
-                targetElement = children[1] || children[0];
-            } else {
-                // Default fallback
-                targetElement = children[0];
-            }
+            // Target first child (<kw-search-block>) under .Page-oneColumn
+            var targetElement = parentContainer.children[0];
 
             if (targetElement) {
-                // Extract the content from the About page using an iframe.
+                // Fetch content using hidden iframe to prevent CORS errors
                 var iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
-                iframe.src = '/homepage-support';
+                iframe.src = aboutPageUrl;
 
                 iframe.onload = function () {
                     try {
@@ -37,14 +30,12 @@
                         var sourceNode = iframeDoc.querySelector('#founder-source-wrapper') || iframeDoc.querySelector('.light-section');
 
                         if (sourceNode) {
-                            var clonedContent = document.importNode(sourceNode, true);
-                            
-                            // Insert it after the determined target element.
-                            targetElement.parentNode.insertBefore(clonedContent, targetElement.nextSibling);
+                            var clonedNode = document.importNode(sourceNode, true);
+                            targetElement.parentNode.insertBefore(clonedNode, targetElement.nextSibling);
                         }
-                    } catch (e) {
-                        console.error('Extraction error:', e);
-                    } final {
+                    } catch (err) {
+                        console.error('DOM Clone Error:', err);
+                    } finally {
                         if (iframe.parentNode) {
                             document.body.removeChild(iframe);
                         }
@@ -56,19 +47,21 @@
         }
     }
 
-    // Interval to wait until .Page-oneColumn and its child elements are fully loaded.
-    function checkAndRun() {
-        var container = document.querySelector('.Page-oneColumn');
-        if (container && container.children.length > 0) {
-            injectDynamicSection();
-        } else {
-            setTimeout(checkAndRun, 200);
+    // Run only on Homepage
+    if (currentUrl === homePageUrl) {
+        function checkAndExecute() {
+            var parent = document.querySelector('.Page-oneColumn');
+            if (parent && parent.children.length > 0) {
+                injectSection();
+            } else {
+                setTimeout(checkAndExecute, 250);
+            }
         }
-    }
 
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        checkAndRun();
-    } else {
-        document.addEventListener('DOMContentLoaded', checkAndRun);
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            checkAndExecute();
+        } else {
+            document.addEventListener('DOMContentLoaded', checkAndExecute);
+        }
     }
 })();
