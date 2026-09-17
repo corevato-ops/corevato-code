@@ -1,20 +1,23 @@
-(function() {
-    // Run only on the root homepage
-    if (window.location.pathname === '/' || window.location.pathname === '') {
-      fetch('https://heartstrong.kw.com/homepage-support')
-        .then(response => response.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          
-          // Grab the section from the support page
-          const founderContent = doc.querySelector('.light-section');
-          const searchBlock = document.querySelector('kw-search-block');
+document.addEventListener("DOMContentLoaded", function () {
+  // Check if current page is the root homepage
+  if (window.location.pathname === "/" || window.location.pathname === "") {
+    fetch("https://heartstrong.kw.com/homepage-support")
+      .then((response) => response.text())
+      .then((html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
 
-          if (founderContent && searchBlock) {
-            searchBlock.parentNode.insertBefore(founderContent, searchBlock.nextSibling);
-          }
-        })
-        .catch(err => console.error('Error loading founder section:', err));
-    }
-})();
+        // Target the founder section from your subpage
+        const founderSection = doc.querySelector(".light-section");
+        
+        // Target the class name .kw-search-block from your homepage
+        const searchBlock = document.querySelector(".kw-search-block");
+
+        // Inject the section directly after .kw-search-block
+        if (founderSection && searchBlock) {
+          searchBlock.parentNode.insertBefore(founderSection, searchBlock.nextSibling);
+        }
+      })
+      .catch((err) => console.error("Error fetching section from support page:", err));
+  }
+});
