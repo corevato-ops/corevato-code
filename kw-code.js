@@ -1,60 +1,20 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const carousel = document.getElementById("carousel");
-    const pagination = document.getElementById("dotPagination");
+(function() {
+    // Run only on the root homepage
+    if (window.location.pathname === '/' || window.location.pathname === '') {
+      fetch('https://heartstrong.kw.com/homepage-support')
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          
+          // Grab the section from the support page
+          const founderContent = doc.querySelector('.light-section');
+          const searchBlock = document.querySelector('kw-search-block');
 
-    if (!carousel) return;
-
-    const items = carousel.querySelectorAll(".carousel-item");
-    if (!items.length) return;
-
-    // Create dots
-    if (pagination) {
-        items.forEach((item, index) => {
-            const dot = document.createElement("span");
-            dot.className = "dot";
-
-            if (index === 0) {
-                dot.classList.add("active");
-            }
-
-            dot.addEventListener("click", function () {
-                carousel.scrollTo({
-                    left: item.offsetLeft,
-                    behavior: "smooth"
-                });
-            });
-
-            pagination.appendChild(dot);
-        });
+          if (founderContent && searchBlock) {
+            searchBlock.parentNode.insertBefore(founderContent, searchBlock.nextSibling);
+          }
+        })
+        .catch(err => console.error('Error loading founder section:', err));
     }
-
-    // Auto Play
-    let currentIndex = 0;
-
-    setInterval(function () {
-        currentIndex++;
-
-        // Start again from first slide
-        if (currentIndex >= items.length) {
-            currentIndex = 0;
-        }
-
-        carousel.scrollTo({
-            left: items[currentIndex].offsetLeft,
-            behavior: "smooth"
-        });
-
-        // Update active dot
-        if (pagination) {
-            const dots = pagination.querySelectorAll(".dot");
-
-            dots.forEach((dot, index) => {
-                dot.classList.toggle(
-                    "active",
-                    index === currentIndex
-                );
-            });
-        }
-
-    }, 3000); // 3 seconds
-});
+})();
