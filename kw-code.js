@@ -1,43 +1,51 @@
-(function() {
-  // Direct domain link set kiya gaya hai
-  const homepageUrl = "https://heartstrong.kw.com/";
-  const currentUrl = window.location.href.split('?')[0].split('#')[0];
+(function () {
+    // Only execute on the Heart Strong Home Group homepage
+    const isHomePage = window.location.href.replace(/\/$/, '') === 'https://heartstrong.kw.com';
 
-  // Exact comparison for full domain/homepage URL
-  if (currentUrl === homepageUrl || currentUrl === homepageUrl.slice(0, -1)) {
+    if (isHomePage) {
+        function injectFounderSection() {
+            const targetElement = document.querySelector('.kw-search-block');
+            
+            // Prevent duplicate injections
+            if (!targetElement || document.querySelector('.founder-container')) return;
 
-    function loadFounderSection() {
-      // Direct duplicate injection prevention
-      if (document.querySelector('.light-section')) return;
+            // Fetch the entire light-section and styles using the full URL
+            fetch('https://heartstrong.kw.com/homepage-support')
+                .then(response => response.text())
+                .then(htmlText => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    
+                    const founderSection = doc.querySelector('.light-section');
+                    const styleBlock = doc.querySelector('style');
 
-      const searchBlock = document.querySelector('kw-search-block');
-      if (!searchBlock) return;
+                    if (founderSection && targetElement.parentNode) {
+                        // Append the extracted CSS style block to head
+                        if (styleBlock) {
+                            document.head.appendChild(styleBlock.cloneNode(true));
+                        }
+                        
+                        // Insert the section right after .kw-search-block
+                        targetElement.parentNode.insertBefore(founderSection, targetElement.nextSibling);
+                    }
+                })
+                .catch(err => console.error('Error loading section from About Page:', err));
+        }
 
-      fetch('https://heartstrong.kw.com/homepage-support')
-        .then(res => {
-          if (!res.ok) throw new Error('Network error: ' + res.status);
-          return res.text();
-        })
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const founderSection = doc.querySelector('.light-section');
+        // Trigger insertion once DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectFounderSection);
+        } else {
+            injectFounderSection();
+        }
 
-          if (founderSection && searchBlock.parentNode) {
-            searchBlock.parentNode.insertBefore(founderSection, searchBlock.nextSibling);
-          }
-        })
-        .catch(err => console.error('Error fetching support section:', err));
+        // Observer to handle delayed rendering of .kw-search-block
+        const observer = new MutationObserver(function () {
+            if (document.querySelector('.kw-search-block') && !document.querySelector('.founder-container')) {
+                injectFounderSection();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
     }
-
-    // Interval DOM check for <kw-search-block>
-    const interval = setInterval(() => {
-      if (document.querySelector('kw-search-block')) {
-        clearInterval(interval);
-        loadFounderSection();
-      }
-    }, 200);
-
-    setTimeout(() => clearInterval(interval), 10000);
-  }
 })();
