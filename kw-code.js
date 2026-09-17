@@ -1,25 +1,24 @@
 (function () {
-    // Current URL check karne ke liye
+    // To check the current URL
     var currentPath = window.location.pathname.toLowerCase();
 
     function injectDynamicSection() {
         // Prevent duplicate insertion
         if (document.querySelector('.founder-container')) return;
 
-        // Parent container find karein
+        // Parent container finding
         var parentContainer = document.querySelector('.Page-oneColumn');
 
         if (parentContainer && parentContainer.children.length > 0) {
-            // Child elements ki list
+            // Child elements list
             var children = parentContainer.children;
             var targetElement = null;
 
-            // Page Link / Path ke mutabiq logic define karein
+            // Define the logic according to the page link/path
             if (currentPath === '/' || currentPath === '') {
-                // HOMEPAGE: Agar pehla child (<kw-search-block>) hai, toh 1st child ke baad dikhayein
                 targetElement = children[0]; 
             } else if (currentPath.includes('homepage-support')) {
-                // ABOUT PAGE: Agar doosre element ke baad dikhana ho
+                // ABOUT PAGE: If it needs to be displayed after the second element
                 targetElement = children[1] || children[0];
             } else {
                 // Default fallback
@@ -27,7 +26,7 @@
             }
 
             if (targetElement) {
-                // About page se content iframe ke zariye extract karein
+                // Extract the content from the About page using an iframe.
                 var iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 iframe.src = '/homepage-support';
@@ -40,7 +39,7 @@
                         if (sourceNode) {
                             var clonedContent = document.importNode(sourceNode, true);
                             
-                            // Determined target element ke baad insert karein
+                            // Insert it after the determined target element.
                             targetElement.parentNode.insertBefore(clonedContent, targetElement.nextSibling);
                         }
                     } catch (e) {
@@ -57,7 +56,7 @@
         }
     }
 
-    // Interval to wait until .Page-oneColumn and its children load
+    // Interval to wait until .Page-oneColumn and its child elements are fully loaded.
     function checkAndRun() {
         var container = document.querySelector('.Page-oneColumn');
         if (container && container.children.length > 0) {
