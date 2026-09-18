@@ -1,61 +1,52 @@
 (function ($) {
-  function injectFounderSection() {
-    // Duplicate check
-    if ($('.light-section').length > 0) return;
-
-    // Homepage URL matching check (trailing slash handle karne ke liye)
-    const currentUrl = window.location.href.toLowerCase();
-    const isHomepage = currentUrl === 'https://heartstrong.kw.com' || 
-                      currentUrl === 'https://heartstrong.kw.com/' || 
-                      window.location.pathname === '/' || 
-                      window.location.pathname === '';
+  function injectSection() {
+    // 1. Homepage Validation Check
+    const currentUrl = window.location.href.toLowerCase().split('?')[0].replace(/\/$/, '');
+    const isHomepage = currentUrl === 'https://heartstrong.kw.com' || window.location.pathname === '/' || window.location.pathname === '';
 
     if (!isHomepage) return;
 
-    // Target selector directly from DevTools
-    const targetSelector = 'kw-search-block, main.Page-oneColumn > :first-child';
-    const $target = $(targetSelector).first();
+    // 2. Prevent Duplicate Injection
+    if ($('.light-section').length > 0) return;
+
+    // 3. Exact Target Element
+    const $target =$('kw-search-block, main.Page-oneColumn > :first-child').first();
 
     if ($target.length) {
-      const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
+      // Direct HTML Template Injection
+      const htmlContent = `
+        <div class="light-section">
+          <div class="founder-container">
+            <div class="left-col">
+              <h6><span class="icon-dot"></span> MEET THE FOUNDER</h6>
+              <h3>Not Just Real Estate. Strategic <strong>Representation.</strong></h3>
+            </div>
+            <div class="center-col">
+              <img src="https://static.kw.com/77/cb/c0bbc2c04f24bd9c827c543b8b7a/945-0001.png" alt="Meet the Founder" />
+            </div>
+            <div class="right-col">
+              <p>Heart Strong Home Group operates at the intersection of luxury real estate and construction expertise. We do not just help clients buy or sell homes; we guide decisions that impact long-term value, lifestyle, and wealth.</p>
+              <a href="#" class="btn-team">Meet The Team</a>
+            </div>
+          </div>
+        </div>
+      `;
 
-      $.get(supportPageUrl, function (htmlData) {
-        if (!htmlData) return;
-
-        // Extract using DOMParser
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlData, 'text/html');
-        const lightSection = doc.querySelector('.light-section');
-
-        if (lightSection && $('.light-section').length === 0) {
-          $target.after(lightSection.outerHTML);
-        } else if ($('.light-section').length === 0) {
-          // Fallback parsing
-          const $parsed = $($.parseHTML(htmlData));
-          const $found = $parsed.find('.light-section').add($parsed.filter('.light-section'));
-          if ($found.length) {
-            $target.after($found);
-          }
-        }
-      });
+      $target.after(htmlContent);
     }
   }
 
-  // MutationObserver to watch DOM rendering dynamically
-  const observer = new MutationObserver(function (mutations, obs) {
-    const target = document.querySelector('kw-search-block');
-    if (target) {
-      injectFounderSection();
+  // Execute on Window Load & DOM Observer
+  $(window).on('load', function () {
+    injectSection();
+  });
+
+  // Backup observer for slow SPA rendering
+  const observer = new MutationObserver(function () {
+    if ($('kw-search-block').length &&$('.light-section').length === 0) {
+      injectSection();
     }
   });
 
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true
-  });
-
-  // Fallback direct execution
-  $(document).ready(injectFounderSection);
-  $(window).on('load', injectFounderSection);
-
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })(jQuery);
