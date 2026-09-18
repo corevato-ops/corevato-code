@@ -1,49 +1,50 @@
 (function ($) {
   function initCustomSection() {
-    // Relative path check for homepage (works on any domain/environment)
+    // 1. Path check for homepage (matches "/" or "")
     const currentPath = window.location.pathname.replace(/\/$/, '');
-    const isHomepage = currentPath === 'https://heartstrong.kw.com/';
+    if (currentPath !== 'https://heartstrong.kw.com/') return;
 
-    if (!isHomepage) return;
-
-    // Target element on the homepage
-    const targetSelector = '.Page-content .Page-oneColumn > :nth-child(1)';
+    // 2. Exact selector target shown in DevTools
+    const targetSelector = 'main.Page-oneColumn > kw-search-block, .Page-oneColumn > :first-child';
     const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
-    // Poll for the target element until KW Builder renders it
+    // 3. Poll until target element renders
     const checkExist = setInterval(function () {
-      const $target = $(targetSelector);
+      const $target = $(targetSelector).first();
 
       if ($target.length) {
         clearInterval(checkExist);
 
-        // Prevent duplicate injections
+        // Prevent duplicate injection
         if ($('.light-section').length > 0) return;
 
-        // Fetch custom page using relative path
-        $.ajax({
-          url: supportPageUrl,
-          type: 'GET',
-          dataType: 'html',
-          success: function (response) {
-            const $parsed = $($.parseHTML(response, document, true));
-            const $content = $parsed.find('.light-section');
+        // 4. Fetch HTML using raw GET
+        $.get(supportPageUrl, function (htmlData) {
+          // Parse returned string without executing nested scripts
+          const $parsedDOM = $($.parseHTML(htmlData));
+          
+          // Try finding .light-section or extract from htmlData string directly
+          let $fetchedSection = $parsedDOM.find('.light-section');
+          
+          if (!$fetchedSection.length) {
+            $fetchedSection = $parsedDOM.filter('.light-section');
+          }
 
-            if ($content.length) {
-              $target.after($content);
-            } else {
-              const extracted = $(response).filter('.light-section').add($(response).find('.light-section'));
-              if (extracted.length) {
-                $target.after(extracted);
-              }
+          // Fallback: If parseHTML strips it, extract via regex/string
+          if (!$fetchedSection.length && htmlData.indexOf('light-section') !== -1) {
+            const extractedHTML = htmlData.match(/<div class="light-section"[\s\S]*?<\/div>\s*<\/div>/i);
+            if (extractedHTML) {
+              $target.after(extractedHTML[0]);
+              return;
             }
-          },
-          error: function (xhr, status, error) {
-            console.error('KW Custom Injection Error:', error);
+          }
+
+          if ($fetchedSection.length) {
+            $target.after($fetchedSection);
           }
         });
       }
-    }, 200);
+    }, 250);
 
     // Stop polling after 10 seconds
     setTimeout(function () {
