@@ -1,20 +1,22 @@
 jQuery(document).ready(function ($) {
-  // Target homepage check using full URL and path
-  const currentUrl = window.location.href.split('?')[0].replace(/\/$/, '');
-  const homepageUrl = 'https://heartstrong.kw.com';
+  // Full target URL verification
+  const currentFullUrl = window.location.href.split('?')[0].replace(/\/$/, '');
+  const targetHomepageUrl = 'https://heartstrong.kw.com';
 
-  if (currentUrl === homepageUrl || window.location.pathname === '/') {
+  // Check if current page is the homepage
+  if (currentFullUrl === targetHomepageUrl || window.location.pathname === '/') {
     const targetSelector = '.Page-content .Page-oneColumn > :nth-child(1)';
     const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
-    // Prevent duplicate injections
+    // Prevent duplicate fetching if already present
     if ($('.founder-container').length === 0) {
       $.get(supportPageUrl, function (data) {
-        // Extract the section block from the fetched page
-        const $fetchedSection = $(data).find('.light-section');
+        // Parse the returned HTML to extract .light-section
+        const $fetchedContent = $(data).find('.light-section');
 
-        if ($fetchedSection.length && $(targetSelector).length) {
-          $(targetSelector).after($fetchedSection);
+        if ($fetchedContent.length && $(targetSelector).length) {
+          // Inject content immediately after the specified element
+          $(targetSelector).after($fetchedContent);
         }
       });
     }
