@@ -1,24 +1,59 @@
-jQuery(document).ready(function ($) {
-  // Full target URL verification
-  const currentFullUrl = window.location.href.split('?')[0].replace(/\/$/, '');
-  const targetHomepageUrl = 'https://heartstrong.kw.com';
+(function ($) {
+  function initCustomSection() {
+    // Relative path check for homepage (works on any domain/environment)
+    const currentPath = window.location.pathname.replace(/\/$/, '');
+    const isHomepage = currentPath === 'https://heartstrong.kw.com/';
 
-  // Check if current page is the homepage
-  if (currentFullUrl === targetHomepageUrl || window.location.pathname === '/') {
+    if (!isHomepage) return;
+
+    // Target element on the homepage
     const targetSelector = '.Page-content .Page-oneColumn > :nth-child(1)';
     const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
-    // Prevent duplicate fetching if already present
-    if ($('.founder-container').length === 0) {
-      $.get(supportPageUrl, function (data) {
-        // Parse the returned HTML to extract .light-section
-        const $fetchedContent = $(data).find('.light-section');
+    // Poll for the target element until KW Builder renders it
+    const checkExist = setInterval(function () {
+      const $target = $(targetSelector);
 
-        if ($fetchedContent.length && $(targetSelector).length) {
-          // Inject content immediately after the specified element
-          $(targetSelector).after($fetchedContent);
-        }
-      });
-    }
+      if ($target.length) {
+        clearInterval(checkExist);
+
+        // Prevent duplicate injections
+        if ($('.light-section').length > 0) return;
+
+        // Fetch custom page using relative path
+        $.ajax({
+          url: supportPageUrl,
+          type: 'GET',
+          dataType: 'html',
+          success: function (response) {
+            const $parsed = $($.parseHTML(response, document, true));
+            const $content = $parsed.find('.light-section');
+
+            if ($content.length) {
+              $target.after($content);
+            } else {
+              const extracted = $(response).filter('.light-section').add($(response).find('.light-section'));
+              if (extracted.length) {
+                $target.after(extracted);
+              }
+            }
+          },
+          error: function (xhr, status, error) {
+            console.error('KW Custom Injection Error:', error);
+          }
+        });
+      }
+    }, 200);
+
+    // Stop polling after 10 seconds
+    setTimeout(function () {
+      clearInterval(checkExist);
+    }, 10000);
   }
-});
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    initCustomSection();
+  } else {
+    $(document).ready(initCustomSection);
+  }
+})(jQuery);
