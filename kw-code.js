@@ -10,7 +10,7 @@
     if (currentUrl !== homepageUrl) return;
 
     // 2. Exact Target Selector aur Full Support Page URL
-    const targetSelector = 'main.Page-oneColumn > kw-search-block, .Page-oneColumn > :first-child';
+    const targetSelector = '.Page-oneColumn > kw-search-block';
     const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
     // 3. Target element Check
