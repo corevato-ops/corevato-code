@@ -1,52 +1,45 @@
 (function ($) {
   function initCustomSection() {
-    // 1. Path check for homepage (matches "/" or "")
+    // Relative path check (Bina homepage URL likhe)
     const currentPath = window.location.pathname.replace(/\/$/, '');
     if (currentPath !== 'https://heartstrong.kw.com/') return;
 
-    // 2. Exact selector target shown in DevTools
+    // Target element: kw-search-block
     const targetSelector = 'main.Page-oneColumn > kw-search-block, .Page-oneColumn > :first-child';
     const supportPageUrl = 'https://heartstrong.kw.com/homepage-support';
 
-    // 3. Poll until target element renders
+    // DOM Polling: Element ke render hone ka wait
     const checkExist = setInterval(function () {
       const $target = $(targetSelector).first();
 
       if ($target.length) {
         clearInterval(checkExist);
 
-        // Prevent duplicate injection
+        // Duplicate check
         if ($('.light-section').length > 0) return;
 
-        // 4. Fetch HTML using raw GET
+        // Fetch raw content
         $.get(supportPageUrl, function (htmlData) {
-          // Parse returned string without executing nested scripts
-          const $parsedDOM = $($.parseHTML(htmlData));
-          
-          // Try finding .light-section or extract from htmlData string directly
-          let $fetchedSection = $parsedDOM.find('.light-section');
-          
-          if (!$fetchedSection.length) {
-            $fetchedSection = $parsedDOM.filter('.light-section');
-          }
+          if (!htmlData) return;
 
-          // Fallback: If parseHTML strips it, extract via regex/string
-          if (!$fetchedSection.length && htmlData.indexOf('light-section') !== -1) {
-            const extractedHTML = htmlData.match(/<div class="light-section"[\s\S]*?<\/div>\s*<\/div>/i);
-            if (extractedHTML) {
-              $target.after(extractedHTML[0]);
-              return;
+          // Direct String Extraction (Parsers aur CORS block se bachne ke liye)
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlData, 'text/html');
+          const lightSection = doc.querySelector('.light-section');
+
+          if (lightSection) {
+            $target.after(lightSection.outerHTML);
+          } else {
+            // Regex Fallback
+            const matches = htmlData.match(/<div class="light-section"[\s\S]*?<\/div>\s*<\/div>/i);
+            if (matches && matches[0]) {
+              $target.after(matches[0]);
             }
-          }
-
-          if ($fetchedSection.length) {
-            $target.after($fetchedSection);
           }
         });
       }
-    }, 250);
+    }, 200);
 
-    // Stop polling after 10 seconds
     setTimeout(function () {
       clearInterval(checkExist);
     }, 10000);
